@@ -18,7 +18,7 @@ class ThirdNormalForm{
         //Check Minmal Basis
         addFDS(FDSList);
         minimalBasis();
-        // printFDS();
+        printFDS();
         
         }catch(IOException e){
             System.out.println(e);
@@ -28,9 +28,9 @@ class ThirdNormalForm{
     public static void addFDS(ArrayList<String> st){
         for(String s: st){
             String[] splitted= s.split(";");
-            String lhs = splitted[0];
+            // String lhs = splitted[0];
             // lhs.add(splitted[0]);
-            FD fd = new FD(lhs,splitted[1]);
+            FD fd = new FD(splitted[0],splitted[1]);
             FDS.add(fd);
         }
     }
@@ -52,9 +52,7 @@ class ThirdNormalForm{
      */
     public static void minimalBasis() {
         // In this step we split the RHS of multiple dependencies to a relation with 
-        for(FD f: FDS){
-            splitRHS(f);
-        }
+        splitRHS(FDS);
 
         eliminateDependecies(FDS);
         
@@ -64,24 +62,29 @@ class ThirdNormalForm{
      * @param functionalDependency the dependency that needs to be broken for RHS
      */
 
-    public static void splitRHS(FD functionalDependency){
-        FD temp = functionalDependency;
-        String[] rhsSplit = functionalDependency.getRHS().split(",");
-        if(rhsSplit.length > 1){
-            for(String s: rhsSplit){
-                FD fd = new FD(functionalDependency.getLHS(),s);
-                FDS.add(fd);
+    public static void splitRHS(HashSet<FD> fds){
+        HashSet<FD> toAdd = new HashSet<>();
+        HashSet<FD> toRemove = new HashSet<>();
+        for(FD f: fds){
+            FD temp = f;
+            String[] rhsSplit = f.getRHS().split(",");
+            if(rhsSplit.length > 1){
+                for(String s: rhsSplit){
+                    FD fd = new FD(f.getLHS(),s);
+                    toAdd.add(fd);
+                }
+                toRemove.add(temp);
             }
-            FDS.remove(temp);
         }
+        fds.addAll(toAdd);
+        fds.removeAll(toRemove);
     }
 
     public static void eliminateDependecies(HashSet<FD> fds){
         for(FD f: fds){
-            // System.out.println(f.getLHS().equals(f.getRHS()));
+            System.out.println(f.getLHS().equals(f.getRHS()));
             // System.out.println(f.getRHS() instanceof String);
             // System.out.println(f.getLHS());
-            f.getLHS();
 
         }
     }
@@ -101,8 +104,10 @@ class FD{
     }
 
     public void printout(){
-        for (String c: LHS) System.out.print(c);
-        System.out.print(" "); System.out.print(RHS); System.out.println();
+        System.out.print(LHS);
+        System.out.print(" "); 
+        System.out.print(RHS); 
+        System.out.println();
     }
 
     public String getRHS(){
