@@ -39,6 +39,7 @@ class ThirdNormalForm{
         System.out.println("Minimal Basis");
         printFDS();
 
+        System.out.println("The 3NF Decomposition equals: ");
         System.out.println(decomposition3NF(FDS));
 
         }catch(IOException e){
@@ -213,7 +214,6 @@ class ThirdNormalForm{
         ArrayList<String> toRemove = new ArrayList<>();
         for(FD fd: fds){ 
             candidate.add(fd.getLHS());
-
             if(!fd.getLHS().equals(fd.getRHS())){
                 toRemove.add(fd.getRHS());
             }
@@ -250,16 +250,24 @@ class ThirdNormalForm{
     public static ArrayList<ArrayList<String>> decomposition3NF(HashSet<FD> fds){
         HashSet<String> attr = attributes;
         ArrayList<ArrayList<String>> K = new ArrayList<>();
-
+        ArrayList<ArrayList<String>> toRemove = new ArrayList<>();
         for(FD f: fds){
             K.add(closure(f.getLHS(), fds));
                 
         }
 
-        for(ArrayList<String> s: K){
-            System.out.println(s);
+        for (ArrayList<String> list : K){
+            for (ArrayList<String> list1 : K){
+                if(!list.equals(list1)){
+                    list.removeAll(list1);
+                    // list1.removeAll(list);
+                }
+                if(list.size() < 2){
+                    toRemove.add(list);
+                }
+            }
         }
-
+        K.removeAll(toRemove);
         K.add(candidateKey);
         return K;
     }
