@@ -5,6 +5,7 @@ import java.util.*;
 class ThirdNormalForm{
 
     static HashSet<FD> FDS = new HashSet<>();
+    static HashSet<String> attributes = new HashSet<>();
     public static void main(String[] args){
         try{
             File file = new File(args[0]);
@@ -13,16 +14,18 @@ class ThirdNormalForm{
             ArrayList<String> FDSList = new ArrayList<>();
             while ((st = br.readLine()) != null){
                 FDSList.add(st);
+
+
             }
-        //Check Minmal Basis
+        //Do the main functions here like minimal basis, closure and 3NF decomp
         addFDS(FDSList);
-        // printFDS();
-        // System.out.println("Sperator");
-        // System.out.println("--------------");
-        minimalBasis();
-        // System.out.println("--------------->>>---");
+        System.out.println("Original FD's");
         printFDS();
-        
+        HashSet<FD> mb = minimalBasis(FDS);
+        System.out.println("Minimal Basis");
+        printFDS();
+        closure(mb);
+
         }catch(IOException e){
             System.out.println(e);
         }
@@ -36,6 +39,9 @@ class ThirdNormalForm{
         }
     }
 
+    /**
+     * A function that prints all the functional dependencies
+     */
     public static void printFDS(){
         for(FD i: FDS){
             i.printout();
@@ -50,22 +56,20 @@ class ThirdNormalForm{
      *  Step 2 No extranious attributes on the LHS if A --> B and AB --> C 
      *  then we can simplify to A --> B and A --> C
      *  Step 3 Remove redundant FD's
+     * @return it outputs a fd which has been reduced
      */
-    public static void minimalBasis() {
+    public static HashSet<FD> minimalBasis(HashSet<FD> fds) {
         // In this step we split the RHS of multiple dependencies to a relation with 
-        FDS = splitRHS(FDS);
-        // printFDS();
-        // System.out.println("Sperator");
-        // System.out.println("--------------");
-        FDS = eliminateDependecies(FDS);
-        // printFDS();
-        
+        splitRHS(fds);
+
+        eliminateDependecies(fds);
+        return fds; 
     }
+
     /**
-     * 
+     * THIS METHOD BREAKS THE RHS OF THE FD TO SEPERATE FD'S
      * @param functionalDependency the dependency that needs to be broken for RHS
      */
-
     public static HashSet<FD> splitRHS(HashSet<FD> fds){
         HashSet<FD> toAdd = new HashSet<>();
         HashSet<FD> toRemove = new HashSet<>();
@@ -85,6 +89,14 @@ class ThirdNormalForm{
         return fds;
     }
 
+    /**
+     * This function removes duplicate dependencies 
+     * and also check if a depenency is redundant they removes 
+     * those dependencies from the FD and adds non redundant ones 
+     * to the FD's
+     * @param fds
+     * @return a new list of FD's
+     */
     public static HashSet<FD> eliminateDependecies(HashSet<FD> fds){
         Set<FD> toRemove = new HashSet<>();
         Set<FD> toAdd = new HashSet<>();
@@ -115,10 +127,10 @@ class ThirdNormalForm{
                 if(fd.getRHS().equals(fd1.getRHS()) && hasSomeKeys(fd.getLHS(), fd1.getLHS())){
                     String common = getCommonKeys(fd.getLHS(), fd1.getLHS());
                     if(!fd.equals(fd1)){
-                        toRemove.add(fd);
-                        
                         FD f = new FD(common, fd.getRHS());
                         commonDep.add(f);
+                        toRemove.add(fd);
+                        
                     }
                 }
             }
@@ -130,6 +142,12 @@ class ThirdNormalForm{
         return fds;
     }
     
+    /**
+     * Helper method for eliminate dependencies
+     * @param s1 the left hand side of the FD
+     * @param s2 the left hand side of the FD
+     * @return a boolean value if the two LHS values have common values
+     */
     public static boolean hasSomeKeys(String s1, String s2){
         Set<Character> set1 = new HashSet<>();
         Set<Character> set2 = new HashSet<>();
@@ -143,6 +161,13 @@ class ThirdNormalForm{
         return set1.retainAll(set2);
     }
 
+    /**
+     * Helper method for eliminate dependencies
+     * @param s1 the left hand side of the FD
+     * @param s2 the left hand side of the FD
+     * @return the value that both LHS have which can help remove 
+     * unecessary dependencies.
+     */
     public static String getCommonKeys(String s1, String s2){
         Set<Character> set1 = new HashSet<>();
         Set<Character> set2 = new HashSet<>();
@@ -168,51 +193,21 @@ class ThirdNormalForm{
     }
 
     // Check Closure and then do the 3NF algo
-    
+    public static HashSet<String> closure(HashSet<FD> mb){
+
+        HashSet<String> attr = new HashSet<String>();
+        for(FD f: mb){
+            String[] arr = f.getLHS().split(",");
+            System.out.println(Arrays.toString(arr));
+            for(int i = 0; i < arr.length; i++){
+                attr.add(arr[i]);
+            }
+        }
+        System.out.println(attr);
+        return attr;
+    }
 
     //Check code in Relation.java and then Algo.java
-    public Set<Relation> decomposeTo3NF(){
-		Set<Relation> result = new HashSet<>();
-		Set<FuncDep> mb = Algos.minimalBasis(this.fds);
-		for(FuncDep fd : mb){
-			Set<Attribute> attrsNow = new HashSet<>(fd.getLeft());
-			attrsNow.addAll(fd.getRight());
-			Set<FuncDep> proj = Algos.projection(attrsNow, mb);
-			result.add(new Relation(attrsNow, proj));
-		}
-		Set<Relation> toRemove = new HashSet<>();
-		for(Relation a : result){
-			for(Relation b : result){
-				if(a != b && a.attrs.containsAll(b.attrs)){
-					toRemove.add(b);
-				}
-			}
-		}
-		result.removeAll(toRemove);
-		Set<Set<Attribute>> keys = Algos.keys(this.attrs, mb);
-		boolean contains = false;
-		for(Relation r : result){
-			for(Set<Attribute> k : keys){
-				if(r.attrs.containsAll(k)){
-					contains = true;
-					break;
-				}
-			}
-			if(contains){
-				break;
-			}
-		}
-		if(!contains){
-			Set<Attribute> key = null;
-			for(Set<Attribute> k : keys){
-				key = k;
-				break;
-			}
-			Set<FuncDep> proj = Algos.projection(key, mb);
-			result.add(new Relation(key, proj));
-		}
-		return result;
-	}
 }
 
 class FD{
@@ -223,6 +218,9 @@ class FD{
         RHS = right; 
     }
 
+    /**
+     * Prints the individual FD with the LHS and RHS
+     */
     public void printout(){
         System.out.print(LHS);
         System.out.print(" -> "); 
@@ -230,22 +228,39 @@ class FD{
         System.out.println();
     }
 
+    /**
+     * Getter method to get the RHS
+     * @return outputs the RHS
+     */
     public String getRHS(){
         return RHS;
     }
 
+    /**
+     * Getter method for the LHS
+     * @return outputs the LHS
+     */
     public String getLHS(){
         return LHS;
     }
 
-    public boolean equals(FD f){
-        if(this.getLHS().equals(f.getLHS()) && this.getRHS().equals(f.getRHS())){
-            return true;
-        }
-        return false;
+    /**
+     * Equals method for the custom FD class to check 
+     * if one fd equals other fd
+     */
+    @Override
+    public boolean equals(Object o){
+        FD f = (FD) o;
+        return f.LHS.equals(this.LHS) && f.RHS.equals(this.RHS);
     }
 
+    /**
+     * A custom hashcode method for the FD class
+     */
+    @Override
     public int hashCode(){
         return this.LHS.hashCode() + this.RHS.hashCode();
     }
 };
+
+
