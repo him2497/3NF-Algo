@@ -6,6 +6,8 @@ class ThirdNormalForm{
 
     static HashSet<FD> FDS = new HashSet<>();
     static HashSet<String> attributes = new HashSet<>();
+    static HashMap<String, String> FDSRelation = new HashMap<>();
+    static ArrayList<String> candidateKey = new ArrayList<String>();
     public static void main(String[] args){
         try{
             File file = new File(args[0]);
@@ -15,16 +17,29 @@ class ThirdNormalForm{
             while ((st = br.readLine()) != null){
                 FDSList.add(st);
 
-
+                String[] arr = st.split(",|;");
+                for(int i = 0; i < arr.length; i++){
+                    attributes.add(arr[i]);
+                }
             }
+
+        System.out.println("Attributes in Relation"); 
+        System.out.println(attributes);
         //Do the main functions here like minimal basis, closure and 3NF decomp
+
         addFDS(FDSList);
         System.out.println("Original FD's");
         printFDS();
+
+        System.out.println("Candidate Keys are");
+        candidateKey = getCandidateKey(FDS);
+        System.out.println(getCandidateKey(FDS));
+
         HashSet<FD> mb = minimalBasis(FDS);
         System.out.println("Minimal Basis");
         printFDS();
-        closure(mb);
+
+        System.out.println(decomposition3NF(FDS));
 
         }catch(IOException e){
             System.out.println(e);
@@ -34,6 +49,7 @@ class ThirdNormalForm{
     public static void addFDS(ArrayList<String> st){
         for(String s: st){
             String[] splitted= s.split(";");
+            FDSRelation.put(splitted[0],splitted[1]);
             FD fd = new FD(splitted[0],splitted[1]);
             FDS.add(fd);
         }
@@ -192,22 +208,61 @@ class ThirdNormalForm{
         return String.join(",", list);
     }
 
-    // Check Closure and then do the 3NF algo
-    public static HashSet<String> closure(HashSet<FD> mb){
+    public static ArrayList<String> getCandidateKey(HashSet<FD> fds){
+        ArrayList<String> candidate = new ArrayList<>();
+        ArrayList<String> toRemove = new ArrayList<>();
+        for(FD fd: fds){ 
+            candidate.add(fd.getLHS());
 
-        HashSet<String> attr = new HashSet<String>();
-        for(FD f: mb){
-            String[] arr = f.getLHS().split(",");
-            System.out.println(Arrays.toString(arr));
-            for(int i = 0; i < arr.length; i++){
-                attr.add(arr[i]);
+            if(!fd.getLHS().equals(fd.getRHS())){
+                toRemove.add(fd.getRHS());
             }
         }
-        System.out.println(attr);
-        return attr;
+        for(String c: candidate){
+            for( int i = 0; i < candidate.size(); i++){
+                if(c.contains(candidate.get(i)) && !c.equals(candidate.get(i))){
+                    if(c.length() > candidate.get(i).length()){
+                        toRemove.add(candidate.get(i));
+                    }else{
+                        toRemove.add(c);
+                    }
+                }
+            }
+        }
+        candidate.removeAll(toRemove);
+        return candidate;
     }
 
+    /**
+     * This method looks at the closure for a key and then returns the attr
+     * @param mb
+     * @return
+     */
+    public static ArrayList<String> closure(String attr, HashSet<FD> fds){
+        ArrayList<String> result = new ArrayList<>();
+        result.add(attr);
+        result.add(FDSRelation.get(attr));			
+        return result;
+    }
+
+
     //Check code in Relation.java and then Algo.java
+    public static ArrayList<ArrayList<String>> decomposition3NF(HashSet<FD> fds){
+        HashSet<String> attr = attributes;
+        ArrayList<ArrayList<String>> K = new ArrayList<>();
+
+        for(FD f: fds){
+            K.add(closure(f.getLHS(), fds));
+                
+        }
+
+        for(ArrayList<String> s: K){
+            System.out.println(s);
+        }
+
+        K.add(candidateKey);
+        return K;
+    }
 }
 
 class FD{
